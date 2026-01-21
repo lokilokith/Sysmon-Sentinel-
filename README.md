@@ -1,41 +1,27 @@
-# Sysmon Threat Analyzer
+# SentinelTrace (Sysmon Threat Analyzer)
 
-**A professional SOC tool for offline detection of advanced threats in Sysmon XML logs.**
+Offline SOC-grade forensic analysis and threat-hunting platform for Sysmon XML telemetry.
 
-## 🎯 What Problem It Solves
-SOC teams often face "alert fatigue" when dealing with massive log files. This tool helps analysts **triage large Sysmon XML logs** and **identify suspicious behavior patterns** (like bursts of activity) without relying solely on static signatures.
+SentinelTrace is designed for **post-incident investigation and analyst-driven triage**, not real-time alerting.  
+It converts raw Sysmon XML logs into **correlated behavioral signals, attack campaigns, and confidence-based verdicts**.
 
-It is designed to confirm: *"Is this machine compromised?"*
-
-## 🚀 Key Features
-*   **Behavioral Analysis**: Detects attack bursts (Process, Network, File) rather than just single events.
-*   **Correlation Engine**: Groups disparate events into cohesive "Campaigns".
-*   **MITRE ATT&CK Mapping**: Automatically maps activity to kill-chain stages (e.g., T1059 Command and Scripting Interpreter).
-*   **Audit-Ready**: Generates structured JSON reports for SIEM integration.
-# Sysmon Threat Analyzer
-
-**Offline SOC-grade threat detection and forensic investigation tool for Sysmon XML logs**
-
-Sysmon Threat Analyzer is a post-incident analysis utility designed for Security Operations Center (SOC) and DFIR use cases.  
-It processes exported Sysmon XML logs to identify suspicious behavior, correlate related events, and produce evidence-driven conclusions.
-
-> **Primary Objective:**  
-> Determine whether an endpoint shows indicators of malicious activity and assess the confidence level of compromise.
+> **Primary question SentinelTrace answers:**  
+> _“Does this endpoint show evidence of malicious activity, and how confident are we?”_
 
 ---
 
 ## Table of Contents
 
 1. Overview  
-2. Problem Statement  
-3. Scope Definition  
+2. Design Philosophy  
+3. What SentinelTrace Is (and Is Not)  
 4. Core Capabilities  
-5. Architecture  
+5. Architecture Overview  
 6. Installation  
 7. Usage  
-8. Output Interpretation  
-9. Detection Philosophy  
-10. MITRE ATT&CK Coverage  
+8. Output Artifacts  
+9. Dashboard & Analyst Workflow  
+10. MITRE ATT&CK Interpretation  
 11. Limitations  
 12. Intended Audience  
 13. License  
@@ -44,127 +30,139 @@ It processes exported Sysmon XML logs to identify suspicious behavior, correlate
 
 ## 1. Overview
 
-Sysmon Threat Analyzer focuses on **offline forensic triage** rather than real-time monitoring.  
-It is designed to support SOC analysts during investigations where Sysmon logs have already been collected from endpoints.
+SOC analysts are frequently overwhelmed by high-volume endpoint telemetry where:
+- Individual events lack context
+- Single detections generate excessive noise
+- True attack activity is buried in normal system behavior
 
-The tool emphasizes:
-- Detection explainability
-- Event correlation
-- Analyst trust
-- Audit-ready output
+SentinelTrace addresses this problem by **correlating behavior over time** instead of treating each event as an alert.
 
----
-
-## 2. Problem Statement
-
-SOC teams commonly face the following challenges:
-
-| Challenge | Description |
-|---------|------------|
-| Log Volume | Sysmon generates extremely high event volumes |
-| Alert Fatigue | Individual events lack context when viewed in isolation |
-| Manual Analysis | Reviewing raw XML logs is slow and error-prone |
-| Time Pressure | Incidents require rapid and defensible conclusions |
-
-Traditional signature-based tools often fail to provide behavioral context.
-
-**Sysmon Threat Analyzer addresses this gap** by correlating events and identifying suspicious activity patterns rather than isolated signals.
+It is built for:
+- Offline forensic analysis
+- Threat hunting
+- Incident validation
+- Analyst training and portfolio demonstration
 
 ---
 
-## 3. Scope Definition
+## 2. Design Philosophy
 
-### In Scope
+SentinelTrace is built on the following SOC principles:
 
-| Capability | Supported |
-|----------|-----------|
-| Offline log analysis | Yes |
-| Behavioral detection | Yes |
-| Event correlation | Yes |
-| MITRE ATT&CK mapping | Yes |
-| JSON incident reporting | Yes |
+- **Signals are not alerts**  
+  Individual events are treated as weak indicators, not conclusions.
 
-### Out of Scope
+- **Correlation > Volume**  
+  Confidence increases only when behavior clusters across time, processes, and kill-chain stages.
 
-| Capability | Supported |
-|----------|-----------|
-| Real-time monitoring | No |
-| Host containment | No |
-| Automated remediation | No |
-| Cross-host correlation | No |
-| Cloud / Identity logs | No |
+- **Explainability over automation**  
+  Analysts must understand *why* something is suspicious.
 
-This scope is intentional and documented.
+- **Honest scope**  
+  If something cannot be observed from Sysmon telemetry, SentinelTrace does not pretend otherwise.
+
+---
+
+## 3. What SentinelTrace Is (and Is Not)
+
+### SentinelTrace IS:
+- An offline forensic analysis tool
+- A SOC investigation and triage aid
+- A behavioral correlation engine
+- A producer of audit-ready artifacts
+
+### SentinelTrace IS NOT:
+- A real-time EDR or XDR
+- A prevention or response tool
+- A replacement for SIEM
+- An automated “malware detector”
+
+This distinction is intentional.
 
 ---
 
 ## 4. Core Capabilities
 
-### 4.1 Behavioral Detection
+### 4.1 Behavioral Burst Detection
 
-- Detects bursts of related activity across time
-- Focuses on execution, file, registry, and network behavior
-- Avoids single-event alerting where context is insufficient
-
----
-
-### 4.2 Event Correlation
-
-- Groups related Sysmon events into logical activity chains
-- Preserves parent-child process relationships
-- Enables timeline-based investigation
+- Groups rapid sequences of related activity into **bursts**
+- Based on:
+  - Process execution
+  - Network connections
+  - File and registry activity
+- Reduces noise from single isolated events
 
 ---
 
-### 4.3 MITRE ATT&CK Mapping
+### 4.2 Campaign Correlation
 
-- Maps detections to ATT&CK tactics and techniques
-- Improves attacker intent understanding
-- Supports SOC reporting and classification
-
----
-
-### 4.4 Audit-Ready Reporting
-
-- Generates structured JSON output
-- Designed for SIEM ingestion and case documentation
-- Suitable for DFIR evidence retention
+- Links multiple bursts across time into **attack campaigns**
+- Tracks:
+  - Process lineage
+  - Host context
+  - Kill-chain progression
+- Enables incident-level reasoning instead of event-level analysis
 
 ---
 
-## 5. Architecture
+### 4.3 Confidence Scoring
 
-### High-Level Flow
+- Assigns a confidence score (0–100) based on:
+  - Detection density
+  - Severity escalation
+  - Kill-chain advancement
+- Prevents binary “infected / clean” conclusions
+
+---
+
+### 4.4 MITRE ATT&CK Mapping
+
+- Maps observed behavior to MITRE ATT&CK tactics and techniques
+- Used for **context and classification**, not automatic verdicts
+- Explicitly avoids equating MITRE presence with malicious intent
+
+---
+
+### 4.5 Audit-Ready Artifacts
+
+Every analysis run produces structured JSON outputs suitable for:
+- SIEM ingestion
+- Incident documentation
+- DFIR case files
+- Analyst review and handoff
+
+---
+
+## 5. Architecture Overview
 
 Sysmon XML Logs
 │
 ▼
-[ XML Parsing ]
+[ XML Parsing & Normalization ]
 │
 ▼
-[ Detection Engine ]
+[ Detection Signals ]
 │
 ▼
-[ Correlation Engine ]
+[ Behavioral Bursts ]
 │
 ▼
-[ Scoring & Verdict ]
+[ Campaign Correlation ]
 │
 ▼
-[ JSON Incident Report ]
+[ Confidence Scoring ]
+│
+▼
+[ Verdict + JSON Artifacts ]
 
 yaml
 Copy code
 
-### Component Responsibilities
-
-| Component | Responsibility |
-|---------|----------------|
-| Parser | Efficient XML ingestion and normalization |
-| Detection Engine | Behavioral and rule-based analysis |
-| Correlation Engine | Event grouping and timeline construction |
-| Scoring Engine | Confidence calculation |
-| Report Generator | Structured output generation |
+Key architectural properties:
+- CLI-first execution
+- Run-level isolation
+- Deterministic analysis
+- UI is optional and non-authoritative
 
 ---
 
@@ -174,126 +172,140 @@ Copy code
 
 | Dependency | Version |
 |----------|---------|
-| Python | 3.9+ |
-| Sysmon Logs | XML format |
+| Python   | 3.10+   |
+| Logs     | Sysmon XML |
 
 ### Setup
 
 ```bash
-git clone https://github.com/lokilokith/sysmon-threat-analyzer.git
-cd sysmon-threat-analyzer
+git clone https://github.com/lokilokith/sentineltrace.git
+cd sentineltrace
+
+python -m venv venv
+
+# Windows
+.\venv\Scripts\activate
+
+# Linux / macOS
+source venv/bin/activate
+
 pip install -r requirements.txt
 7. Usage
-Analyze a Sysmon XML Log
-powershell
+7.1 Interactive CLI Menu
+bash
 Copy code
-python cli.py analyze data/sample_sysmon.xml --out reports/
-Execution Workflow
-Load Sysmon XML file
+python cli.py
+Provides access to all analysis modes.
 
-Parse and normalize events
+7.2 Strict Audit Mode (Headless)
+bash
+Copy code
+python cli.py analyze data/suspect_log.xml --out reports/
+Use cases:
 
-Apply detection logic
+Batch processing
 
-Correlate related activity
+Automated sandboxes
 
-Score attack confidence
+Controlled forensic pipelines
 
-Generate JSON report
+7.3 Dashboard Mode
+bash
+Copy code
+python cli.py --open
+Access via browser:
 
-8. Output Interpretation
-Console Output
-Field	Description
-Run ID	Unique analysis identifier
-Verdict	Final logic-driven conclusion
-Attack Confidence	Low / Medium / High
-Highest Kill Chain Stage	Most advanced MITRE stage observed
+cpp
+Copy code
+http://127.0.0.1:5000/
+The dashboard is investigative, not authoritative.
 
-JSON Report Structure
-reports/run_<id>.json
+8. Output Artifacts
+Each run creates a dedicated directory:
 
-Field	Description
-run_id	Analysis session ID
-detections_count	Total detection hits
-attack_confidence.score	Numerical score
-attack_confidence.level	Confidence classification
-verdict	Final assessment
-mitre_techniques	Mapped ATT&CK techniques
-timeline	Chronological event sequence
+pgsql
+Copy code
+reports/
+└── run_<uuid>/
+    ├── summary.json
+    ├── detections.json
+    ├── bursts.json
+    ├── campaigns.json
+    ├── mitre.json
+    └── metadata.json
+Example: summary.json
+json
+Copy code
+{
+  "run_id": "3d73582ea008465a901196fca75727f5",
+  "total_events": 60984,
+  "detections_count": 30664,
+  "attack_confidence": {
+    "score": 85,
+    "level": "High",
+    "highest_kill_chain": "Actions on Objectives"
+  },
+  "verdict": "Critical threat patterns detected."
+}
+9. Dashboard & Analyst Workflow
+The dashboard is designed to mirror real SOC investigation flow:
 
-9. Detection Philosophy
-This project avoids opaque or probabilistic black-box detection.
+Triage suspicious campaigns
 
-Detection logic is designed to be:
+Review timelines and process trees
 
-Principle	Description
-Deterministic	Same input produces same output
-Explainable	Every detection can be justified
-Tunable	Thresholds can be adjusted
-Analyst-Readable	No hidden heuristics
+Drill into MITRE techniques
 
-This aligns with real SOC investigation requirements.
+Escalate, mark benign, or flag false positives
 
-10. MITRE ATT&CK Coverage (Example)
-Tactic	Technique ID	Technique Name
-Execution	T1059	Command and Scripting Interpreter
-Persistence	T1547	Boot or Logon Autostart Execution
-Credential Access	T1003	OS Credential Dumping
-Defense Evasion	T1070	Indicator Removal
+Add analyst notes
 
-Coverage expands as detection rules are added.
+The UI intentionally suppresses execution-only noise and exposes why something is not alerting.
+
+10. MITRE ATT&CK Interpretation
+SentinelTrace treats MITRE ATT&CK as:
+
+A behavioral taxonomy
+
+A classification aid
+
+A reporting framework
+
+Not as proof of compromise.
+
+The MITRE drill-down view:
+
+Considers frequency, severity, and context
+
+Explicitly warns against single-event conclusions
+
+Requires analyst judgment
 
 11. Limitations
-Limitation	Impact
-Offline-only	No real-time alerts
-Single-host focus	No lateral movement correlation
-Lab-trained logic	Requires production tuning
-No response actions	Detection only
+Known and documented limitations:
 
-These constraints are explicitly documented and intentional.
+Offline analysis only
+
+Single-host focus
+
+No response or containment
+
+XML parsing is non-streaming
+
+Detection logic is heuristic and lab-tuned
+
+No allowlisting or FP feedback loop (yet)
+
+These constraints are intentional and transparent.
 
 12. Intended Audience
-Role	Relevance
-SOC Tier 1 Analysts	Triage and investigation
-SOC Tier 2 Analysts	Incident validation
-DFIR Practitioners	Post-compromise analysis
-Blue Team Learners	Detection engineering practice
+SOC Tier-1 and Tier-2 Analysts
 
+DFIR practitioners
 
-## 📦 How to Run
+Blue team engineers
 
-The tool is accessed via the `cli.py` wrapper.
+Security students building SOC portfolios
 
-### Analyze a File
-Process a raw Sysmon XML log and generate a professional report.
+This project prioritizes SOC reasoning over production deployment.
 
-```powershell
-python cli.py analyze data/sample_sysmon.xml --out reports/
-```
-
-## 📊 Understanding the Output
-
-### Console Summary
-*   **Run ID**: Unique identifier for the analysis session.
-*   **Verdict**: The tool's final assessment (e.g., "Attack patterns detected").
-*   **Attack Confidence**:
-    *   **Low**: Likely background noise.
-    *   **Medium/High**: Strong indicators of compromise.
-*   **Highest Killchain**: The most advanced stage of the attack observed (e.g., "Actions on Objectives").
-
-### JSON Report (`reports/run_<id>.json`)
-A machine-readable file containing:
-*   `detections_count`: Total number of rule hits.
-*   `attack_confidence`: Object containing score and level.
-*   `verdict`: The final logic-driven conclusion.
-
-## ⚠️ Limitations
-*   **Batch Analysis Only**: This is an offline forensic tool, not a real-time EDR agent.
-*   **No Live Response**: It analyzes logs but does not block processes or isolate hosts.
-*   **Lab-Trained Baselines**: Anomaly detection logic is tuned on lab data; production environments may require whitelist tuning.
-*   **Not an EDR**: It complements EDRs by providing detailed post-incident analysis.
-
-## 🛠️ Architecture
-*   **Ingestion**: Streaming XML parser (efficient for large files).
-*   **Engine**: Hybrid logic (Behavioral + YARA).
-*   **Persistence**: SQLite-backed state management.
