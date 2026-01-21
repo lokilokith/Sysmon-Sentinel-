@@ -248,7 +248,7 @@ Copy code
   "verdict": "Critical threat patterns detected."
 }
 9. Dashboard & Analyst Workflow
-The dashboard is designed to mirror real SOC investigation flow:
+The dashboard mirrors real SOC investigation flow:
 
 Triage suspicious campaigns
 
@@ -308,4 +308,3 @@ Blue team engineers
 Security students building SOC portfolios
 
 This project prioritizes SOC reasoning over production deployment.
-
